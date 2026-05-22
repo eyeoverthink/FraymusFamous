@@ -1,0 +1,123 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+version '2.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/main/java']
+            // Exclude Processing-dependent visualization files
+            exclude '**/sim/UniverseModel.java'
+            // Exclude incomplete LLM engine files with compilation errors
+            exclude '**/llm/LlamaEngine.java'
+            exclude '**/llm/InferenceCore.java'
+            exclude '**/llm/ModelLoader.java'
+            exclude '**/llm/NativeBridge.java'
+            // Exclude old ollama implementations (replaced by fraymus-ai-core library)
+            exclude '**/ollama/RagEngine.java'
+            exclude '**/ollama/ToolRouter.java'
+            exclude '**/ollama/UniversalMain.java'
+            exclude '**/ollama/UniversalSystemMain.java'
+            exclude '**/ollama/VectorVault.java'
+            // Exclude files that depend on missing io.fraymus.ai package
+            exclude '**/ai/FraymusPhysicsReflector.java'
+            exclude '**/examples/FraymusAIExample.java'
+            exclude '**/examples/QuantumSupremacyDemo.java'
+            exclude '**/examples/RealPhysicsDemo.java'
+            exclude '**/examples/ReflectorExample.java'
+            // FraynixBoot.java rewritten — no longer depends on io.fraymus.ai
+            // exclude '**/FraynixBoot.java'
+            exclude '**/FraymusSystem.java'
+            exclude '**/FraynixMain.java'
+        }
+    }
+}
+
+def osName = System.getProperty('os.name').toLowerCase()
+def lwjglNativesValue = osName.contains('win') ? 'natives-windows' :
+    (osName.contains('mac') ? 'natives-macos' : 'natives-linux')
+def imguiNativesSuffix = osName.contains('win') ? 'windows' :
+    (osName.contains('mac') ? 'macos' : 'linux')
+
+repositories {
+    mavenCentral()
+}
+
+project.ext.lwjglVersion = "3.3.3"
+project.ext.jomlVersion = "1.10.5"
+project.ext.lwjglNatives = lwjglNativesValue
+project.ext.imguiVersion = "1.86.11"
+
+dependencies {
+    // JSON processing
+    implementation 'org.json:json:20231013'
+    
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'ch.qos.logback:logback-classic:1.4.11'
+    
+    // Email (for NeuralCourier)
+    implementation 'com.sun.mail:javax.mail:1.6.2'
+
+    implementation "io.github.spair:imgui-java-binding:$imguiVersion"
+    implementation "io.github.spair:imgui-java-lwjgl3:$imguiVersion"
+    runtimeOnly "io.github.spair:imgui-java-natives-${imguiNativesSuffix}:$imguiVersion"
+
+    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+    implementation "org.lwjgl:lwjgl"
+    implementation "org.lwjgl:lwjgl-glfw"
+    implementation "org.lwjgl:lwjgl-opengl"
+    implementation "org.lwjgl:lwjgl-stb"
+    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
+
+    implementation "org.joml:joml:$jomlVersion"
+
+    implementation "org.apache.pdfbox:pdfbox:3.0.3"
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'org.java-websocket:Java-WebSocket:1.5.7'
+    
+    // MongoDB for immediate persistence
+    implementation "org.mongodb:mongodb-driver-sync:4.11.1"
+    
+    // WebSocket for live HTML arena visualization
+    implementation "org.json:json:20230227"
+    
+    // Ollama Java SDK for LLM integration
+    implementation 'io.github.ollama4j:ollama4j:1.1.0'
+}
+
+application {
+    mainClass = 'fraymus.FraymusLauncher'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'fraymus.FraymusLauncher'
+    }
+}
+
+run {
+    jvmArgs = ['-Djava.awt.headless=false']
+    workingDir = projectDir
+    
+    // Allow overriding main class via property
+    if (project.hasProperty('mainClass')) {
+        mainClass = project.property('mainClass')
+    }
+}
