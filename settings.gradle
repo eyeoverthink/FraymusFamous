@@ -1,0 +1,5 @@
+rootProject.name = 'fraymus'
+
+include 'Asset-Manager'
+include 'fraymus-ai-core'
+include 'deepthought-zero'
